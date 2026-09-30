@@ -13,5 +13,9 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    allowedHosts: true,
+    cors: true,
+  },
   resolve: { alias: aliases },
 });

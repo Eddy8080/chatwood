@@ -4,7 +4,7 @@ set -x
 rm -rf /app/tmp/pids/server.pid
 rm -rf /app/tmp/cache/*
 
-pnpm install
+CI=true pnpm install
 
 echo "Ready to run Vite development server."
 

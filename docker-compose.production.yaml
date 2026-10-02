@@ -1,17 +1,26 @@
-version: '3'
+version: '3.8'
+
+networks:
+  chatwoot_net:
+    driver: bridge
 
 services:
   base: &base
     image: chatwoot/chatwoot:latest
-    env_file: .env ## Change this file for customized env variables
+    env_file: .env
     volumes:
       - storage_data:/app/storage
+    networks:
+      - chatwoot_net
 
   rails:
     <<: *base
+    container_name: chatwoot_web
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - '127.0.0.1:3000:3000'
     environment:
@@ -24,9 +33,12 @@ services:
 
   sidekiq:
     <<: *base
+    container_name: chatwoot_sidekiq
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
       - RAILS_ENV=production
@@ -36,26 +48,38 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
+    container_name: chatwoot_db
     restart: always
-    ports:
-      - '127.0.0.1:5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    env_file: .env
     environment:
-      - POSTGRES_DB=chatwoot
-      - POSTGRES_USER=postgres
-      # Please provide your own password.
-      - POSTGRES_PASSWORD=
+      - POSTGRES_DB=${POSTGRES_DB:-chatwoot_production}
+      - POSTGRES_USER=${POSTGRES_USER:-chatwoot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - chatwoot_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chatwoot} -d ${POSTGRES_DB:-chatwoot_production}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
+    container_name: chatwoot_redis
     restart: always
     command: ["sh", "-c", "redis-server --requirepass \"$REDIS_PASSWORD\""]
     env_file: .env
     volumes:
       - redis_data:/data
-    ports:
-      - '127.0.0.1:6379:6379'
+    networks:
+      - chatwoot_net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   storage_data:

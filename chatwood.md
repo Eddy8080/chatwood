@@ -97,7 +97,7 @@ graph TD
 
 ## 5. Guia de Operação e Comandos Úteis
 
-### Comandos Docker (Ambiente em Contêineres)
+### 5.1. Comandos Docker (Ambiente em Contêineres)
 
 | Ação | Comando |
 | :--- | :--- |
@@ -108,6 +108,34 @@ graph TD
 | **Executar console do Rails** | `docker compose exec rails bundle exec rails c` |
 | **Executar migrações do banco** | `docker compose exec rails bundle exec rails db:migrate` |
 | **Parar todos os contêineres** | `docker compose down` |
+
+### 5.2. Gestão de Repositório Git e Sincronização com Upstream
+
+O repositório está configurado para manter sincronia contínua com o repositório oficial do Chatwoot (`upstream`), preservando alterações customizadas (configurações Docker, documentação e ajustes de portas) no seu repositório de deploy (`origin`):
+
+- **Remoto `origin` (Seu Fork / Deploy Nuvem):** `https://github.com/Eddy8080/chatwood.git`
+- **Remoto `upstream` (Chatwoot Oficial):** `https://github.com/chatwoot/chatwoot.git`
+
+#### Fluxo de Sincronização e Atualização:
+
+1. **Buscar novidades e tags do upstream oficial:**
+   ```bash
+   git fetch upstream --tags --prune
+   ```
+
+2. **Reaplicar seus commits locais sobre a versão mais recente do upstream:**
+   ```bash
+   git rebase upstream/develop
+   ```
+
+3. **Enviar a branch atualizada para o seu repositório no GitHub:**
+   ```bash
+   git push origin develop --force-with-lease --no-verify
+   git push origin develop:main --force-with-lease --no-verify
+   git push origin --tags --no-verify
+   ```
+
+> **Nota sobre o `--no-verify`:** O Chatwoot possui uma validação nativa de push no script `bin/validate_push` (executado pelo hook Husky) que bloqueia pushes diretos para `develop` e `master` para evitar erros no repositório upstream. No seu fork pessoal, a flag `--no-verify` permite enviar as branches com segurança.
 
 ---
 

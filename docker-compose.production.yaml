@@ -50,6 +50,8 @@ services:
     image: pgvector/pgvector:pg16
     container_name: chatwoot_db
     restart: always
+    # ports:
+    #   - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file: .env
